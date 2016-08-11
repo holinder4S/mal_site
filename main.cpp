@@ -127,14 +127,6 @@ int main(int argc, char **argv) {
     signal(SIGINT, recover_arp_spoofing);
     pthread_join(thread_id, NULL);
     pthread_join(thread_relay_id, NULL);
-    /*
-    for(int i=0; i<3; i++) {
-        printf(".");
-        if (pcap_sendpacket(pcd, arp_packet_for_victim, 42) != 0)
-        { fprintf(stderr,"\nError sending the packet: \n", pcap_geterr(pcd)); return 0; }
-        //if (pcap_sendpacket(pcd, arp_packet_for_gateway, 42) != 0)
-        //{ fprintf(stderr,"\nError sending the packet: \n", pcap_geterr(pcd)); return 0; }
-    }*/
 
     return 0;
 }
@@ -202,15 +194,6 @@ void relaypacket_callback(u_char *pcd, const struct pcap_pkthdr *pkthdr, const u
     eth_header = (struct libnet_ethernet_hdr *)packet;      // get ethernet header
     etherh_protocoltype = ntohs(eth_header->ether_type);    // get ethernet header -> protocol type
 
-    /*
-    for(int i=0; i<pkthdr->len; i++) {
-        if(i % 16 != 0)
-            printf("%.2x ", packet[i]);
-        else
-            printf("%.2x\n", packet[i]);
-    }
-    printf("=====================================\n");
-    */
 
     if(etherh_protocoltype == ETHERTYPE_IP){
         sscanf(my_mac, "%2x:%2x:%2x:%2x:%2x:%2x", my_mac_addr, my_mac_addr+1, my_mac_addr+2, my_mac_addr+3, my_mac_addr+4, my_mac_addr+5);
@@ -226,7 +209,7 @@ void relaypacket_callback(u_char *pcd, const struct pcap_pkthdr *pkthdr, const u
         // HTTP Request에서 유해 사이트 검색
         if(ip_header->ip_p == IPPROTO_TCP) {
             tcp_header = (struct libnet_tcp_hdr *)(packet + sizeof(struct libnet_ethernet_hdr) + sizeof(struct libnet_ipv4_hdr));
-            if((tcp_header->th_flags & TH_PUSH) && (tcp_header->th_flags & TH_ACK)) {
+            //if((tcp_header->th_flags & TH_PUSH) && (tcp_header->th_flags & TH_ACK)) {
                 packet_tmp = (packet + sizeof(struct libnet_ethernet_hdr) + sizeof(struct libnet_ipv4_hdr) + sizeof(struct libnet_tcp_hdr));
                 char *host_offset, *hostend_offset;
                 char *req_url;
@@ -244,7 +227,7 @@ void relaypacket_callback(u_char *pcd, const struct pcap_pkthdr *pkthdr, const u
                     }
                     fclose(fp);
                 }
-            }
+            //}
         }
 
         /* Ethernet header manipulation for relay~~! */
@@ -260,9 +243,6 @@ void relaypacket_callback(u_char *pcd, const struct pcap_pkthdr *pkthdr, const u
             if (pcap_sendpacket((pcap_t *)pcd, packet, pkthdr->len) != 0)
             { fprintf(stderr,"\nError sending the packet(GtoV): %s\n", pcap_geterr((pcap_t *)pcd));}
         }
-
-        //printf("packet len : 0x%x\n", pkthdr->len);
-        /* Send Packet Relay */
     }
 
 }
@@ -463,8 +443,10 @@ int mal_site_filtering(FILE *fp, char *req_url) {
 
     while(!feof(fp)) {
         fscanf(fp, "%s", tmp);
-        if(strstr(tmp+7, req_url) != NULL)
+        if(strstr(tmp+7, req_url) != NULL) {
+            printf("req_url : %s : mal_site detect -> BANNNNNNN ~~!!!!\n", req_url);
             return 1;
+        }
     }
 
     return 0;
