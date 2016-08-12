@@ -440,11 +440,15 @@ void recover_arp_spoofing(int signo) {
 
 int mal_site_filtering(FILE *fp, char *req_url) {
     char tmp[1024];
+    FILE *ban_log_file;
 
     while(!feof(fp)) {
         fscanf(fp, "%s", tmp);
         if(strstr(tmp+7, req_url) != NULL) {
+            ban_log_file = fopen("ban_malsite.log", "a+");
             printf("req_url : %s : mal_site detect -> BANNNNNNN ~~!!!!\n", req_url);
+            fprintf(ban_log_file, "req_url : %s : mal_site detect -> BANNNNNNN ~~!!!!\n", req_url);
+            fclose(ban_log_file);
             return 1;
         }
     }
